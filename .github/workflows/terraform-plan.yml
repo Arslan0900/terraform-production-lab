@@ -1,25 +1,21 @@
-name: Terraform Apply
+name: Terraform Plan
 
 on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: "Environment to apply"
-        required: true
-        default: "dev"
-        type: choice
-        options:
-          - dev
-          - prod
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
 
 jobs:
-  terraform-apply:
-    name: Terraform Apply
+  terraform-plan-dev:
+    name: Terraform Plan Dev
     runs-on: ubuntu-latest
 
     defaults:
       run:
-        working-directory: envs/${{ inputs.environment }}
+        working-directory: envs/dev
 
     steps:
       - name: Checkout code
@@ -35,6 +31,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive
+
       - name: Terraform init
         run: terraform init -input=false
 
@@ -42,7 +41,4 @@ jobs:
         run: terraform validate
 
       - name: Terraform plan
-        run: terraform plan -input=false -out=tfplan
-
-      - name: Terraform apply
-        run: terraform apply -input=false -auto-approve tfplan
+        run: terraform plan -input=false
